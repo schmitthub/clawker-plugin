@@ -11,7 +11,7 @@
       "description": "Clawker support expert for setup, configuration, and troubleshooting",
       "source": {
         "source": "git-subdir",
-        "url": "schmitthub/clawker",
+        "url": "https://github.com/schmitthub/clawker.git",
         "path": "claude-plugin/clawker-support",
         "ref": "main",
         "sha": "4d9744653d39c7389a7b2fffcf0128ec89c10d49"
