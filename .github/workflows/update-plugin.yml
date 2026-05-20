@@ -52,7 +52,13 @@ jobs:
           URL=$(echo "$SOURCE" | jq -r '.url')
           PATH_IN_REPO=$(echo "$SOURCE" | jq -r '.path // ""')
 
+          # gh api needs owner/repo shorthand, but .source.url may be a full
+          # clone URL (https://, ssh://, git@). Normalize to owner/repo for API
+          # calls; the original URL stays untouched in marketplace.json.
+          GH_REPO=$(echo "$URL" | sed -E 's|^https?://github\.com/||; s|^ssh://git@github\.com/||; s|^git@github\.com:||; s|\.git$||')
+
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "gh-repo=$GH_REPO" >> "$GITHUB_OUTPUT"
           echo "path=$PATH_IN_REPO" >> "$GITHUB_OUTPUT"
 
       - name: Fetch plugin.json from source repo at target SHA
@@ -70,7 +76,8 @@ jobs:
             JSON_PATH=".claude-plugin/plugin.json"
           fi
 
-          VERSION=$(gh api "repos/${URL}/contents/${JSON_PATH}?ref=${SHA}" \
+          GH_REPO="${{ steps.source.outputs.gh-repo }}"
+          VERSION=$(gh api "repos/${GH_REPO}/contents/${JSON_PATH}?ref=${SHA}" \
             --jq '.content' | base64 -d | jq -r '.version // empty')
 
           if [ -z "$VERSION" ]; then
