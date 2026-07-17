@@ -3,8 +3,10 @@
 This repository is a Claude Code plugin and its marketplace in one: the
 `clawker-support` plugin lives at the repo root, and
 `.claude-plugin/marketplace.json` serves it with a relative source (`"./"`).
-It ships one skill: `skills/clawker-support` — a clawker internals expert for
-end users (setup, config, troubleshooting). Its documentation philosophy is
+It ships two skills: `skills/clawker-support` — a clawker internals expert for
+end users (setup, config, troubleshooting) — and `skills/bundle-creator` — a
+guided authoring workflow for bundles and their components (harnesses, stacks,
+monitoring extensions). The shared documentation philosophy is
 **minimal concrete details; point at live docs**.
 
 ## Skill Plugin Conventions
@@ -52,6 +54,13 @@ clawker-plugin/
 │   └── plugin.json               # Plugin metadata and version of record
 ├── README.md                     # User-facing install and usage docs
 ├── CLAUDE.md                     # This file — development guide
+├── skills/bundle-creator/
+│   ├── SKILL.md                  # Guided authoring workflow: interview → scaffold → walkthrough → validate → build
+│   └── reference/
+│       ├── bundle-envelope.md    # Bundle identity, layout, addressing, publishing, path:/url: dev loop
+│       ├── stacks.md             # Stack authoring: interview questions, self-guard pattern, gotchas
+│       ├── harnesses.md          # Harness authoring: manifest walkthrough order, security gotchas
+│       └── monitoring.md         # Monitoring-extension authoring: lanes, routing, retention, gotchas
 └── skills/clawker-support/
     ├── SKILL.md                  # Main skill definition and workflow
     └── reference/

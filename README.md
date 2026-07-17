@@ -1,10 +1,12 @@
 # Clawker Plugin
 
-A Claude Code plugin that acts as a clawker internals expert — helping you set up, configure, and troubleshoot [clawker](https://github.com/schmitthub/clawker) environments.
+A Claude Code plugin of [clawker](https://github.com/schmitthub/clawker) expert skills — setup, configuration, and troubleshooting support, plus guided authoring of bundles, harnesses, stacks, and monitoring extensions.
 
 This repository is both the plugin and its marketplace: the `clawker-support` plugin lives at the repo root and `.claude-plugin/marketplace.json` serves it directly.
 
 ## What it does
+
+### clawker-support
 
 When you invoke `/clawker-support`, Claude becomes a clawker configuration specialist that:
 
@@ -13,6 +15,16 @@ When you invoke `/clawker-support`, Claude becomes a clawker configuration speci
 - **Synthesizes** the exact YAML config you need, with firewall rules and all
 
 It understands the full clawker system: Dockerfile generation, config layering, firewall architecture, injection points, build-time vs runtime, and common gotchas.
+
+### bundle-creator
+
+When you invoke `/bundle-creator`, Claude walks you through authoring clawker extensions step by step:
+
+- **Interviews** you first — distributable bundle or local-only component, and which component types (harness, stack, monitoring extension)
+- **Scaffolds** the correct layout, then walks each manifest field one concept at a time
+- **Validates** the result with `clawker bundle validate --strict` and attempts a real build when the clawker CLI and Docker are available
+
+It handles new creation, modifying existing bundles, and promoting a loose local component into a distributable bundle.
 
 ## Install
 
@@ -47,7 +59,11 @@ In any Claude Code session:
 /clawker-support help me set up a Rust project with clawker
 ```
 
-Or just ask about clawker — the skill triggers automatically when it detects clawker-related questions.
+```
+/bundle-creator I want to package my zig stack for my team
+```
+
+Or just ask about clawker — the skills trigger automatically when Claude detects clawker-related questions or bundle-authoring work.
 
 ## Documentation
 

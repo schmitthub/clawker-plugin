@@ -11,7 +11,7 @@
       "description": "Clawker expert skills: setup, configuration, and troubleshooting support, plus bundle, harness, stack, and monitoring-extension authoring",
       "source": "./",
       "homepage": "https://docs.clawker.dev",
-      "version": "1.0.25"
+      "version": "1.0.26"
     }
   ]
 }
