@@ -8,16 +8,10 @@
   "plugins": [
     {
       "name": "clawker-support",
-      "description": "Clawker support expert for setup, configuration, and troubleshooting",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/schmitthub/clawker.git",
-        "path": "claude-plugin/clawker-support",
-        "ref": "main",
-        "sha": "ee74d7a822009e357c1f0e6bcd0d92f04b2f0330"
-      },
+      "description": "Clawker expert skills: setup, configuration, and troubleshooting support, plus bundle, harness, stack, and monitoring-extension authoring",
+      "source": "./",
       "homepage": "https://docs.clawker.dev",
-      "version": "1.0.23"
+      "version": "1.0.24"
     }
   ]
 }

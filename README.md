@@ -1,21 +1,54 @@
-# Claude Plugins
+# Clawker Plugin
 
-Claude Code plugins by [schmitthub](https://github.com/schmitthub).
+A Claude Code plugin that acts as a clawker internals expert — helping you set up, configure, and troubleshoot [clawker](https://github.com/schmitthub/clawker) environments.
+
+This repository is both the plugin and its marketplace: the `clawker-support` plugin lives at the repo root and `.claude-plugin/marketplace.json` serves it directly.
+
+## What it does
+
+When you invoke `/clawker-support`, Claude becomes a clawker configuration specialist that:
+
+- **Researches** what you're trying to add (packages, MCP servers, tools, runtimes)
+- **Reads** the actual Dockerfile templates and config schema to understand how clawker works
+- **Synthesizes** the exact YAML config you need, with firewall rules and all
+
+It understands the full clawker system: Dockerfile generation, config layering, firewall architecture, injection points, build-time vs runtime, and common gotchas.
 
 ## Install
 
 ```bash
-claude plugin marketplace add schmitthub/claude-plugins
+# Install with the clawker CLI (recommended)
+clawker skill install
 ```
 
-## Plugins
-
-| Plugin | Source | Description |
-|--------|--------|-------------|
-| `clawker-support` | [schmitthub/clawker](https://github.com/schmitthub/clawker) | Clawker support expert for setup, configuration, and troubleshooting |
-
-### clawker-support
+Or manually:
 
 ```bash
+# Add the marketplace
+claude plugin marketplace add schmitthub/clawker-plugin
+
+# Install the plugin
 claude plugin install clawker-support@schmitthub-plugins
 ```
+
+## Usage
+
+In any Claude Code session:
+
+```
+/clawker-support how do I add the GitHub MCP to my container?
+```
+
+```
+/clawker-support my container can't reach pypi.org
+```
+
+```
+/clawker-support help me set up a Rust project with clawker
+```
+
+Or just ask about clawker — the skill triggers automatically when it detects clawker-related questions.
+
+## Documentation
+
+Full clawker documentation: [docs.clawker.dev](https://docs.clawker.dev)
