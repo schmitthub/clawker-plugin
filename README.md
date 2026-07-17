@@ -18,7 +18,7 @@ It understands the full clawker system: Dockerfile generation, config layering, 
 
 ```bash
 # Install with the clawker CLI (recommended)
-clawker skill install
+clawker plugin install
 ```
 
 Or manually:
