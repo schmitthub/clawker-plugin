@@ -53,29 +53,6 @@ The struct-roundtrip bug above is distinguished by a zero-value
 `organizationUuid` in the poisoned blob. Current auth model and `/login`
 troubleshooting in `claude-code.md`.
 
-## git push -u / upstream tracking in worktree containers
-
-Worktree containers mask the main repo's `.git/hooks/` and `.git/config` with
-read-only binds. This is a deliberate security measure (always on): anything
-written to those paths from inside the container would execute on the *host*
-the next time the user runs git in the main checkout. See
-`https://docs.clawker.dev/worktrees#worktree-caveats`.
-
-Consequences inside the container: `git config --local` and `git remote add`
-fail loudly; `git push -u` **pushes successfully but fails to persist upstream
-tracking** (easy-to-miss warning — upstream config lives in the read-only
-shared `.git/config`).
-
-Symptom after the session: the user removes the worktree, checks the branch
-out in the repo root, and plain `git push` reports no upstream — even though
-the branch was pushed and has an open PR. Tracking was never persisted.
-
-Fix: one-time on the host: `git push -u origin <branch>` (or
-`git branch --set-upstream-to=origin/<branch>`). Inside the container, push
-with an explicit refspec: `git push origin HEAD`. Branches that already
-existed on the remote at worktree creation get tracking configured host-side
-automatically and are unaffected.
-
 ## --worktree on a branch already checked out
 
 `clawker run --worktree <branch>` for a branch that is already checked out in
