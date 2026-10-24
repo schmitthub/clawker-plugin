@@ -69,7 +69,6 @@ build:
     - ripgrep
     - less
     - procps
-    - sudo
     - fzf
     - zsh
     - man-db
