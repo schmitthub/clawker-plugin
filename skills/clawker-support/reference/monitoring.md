@@ -2,9 +2,11 @@
 
 The clawker monitoring stack is an opt-in OpenTelemetry pipeline that
 captures Claude Code logs/metrics, clawker CLI logs, control-plane logs,
-and firewall (Envoy + CoreDNS) logs. It runs on the same `clawker-net`
-Docker network as agent containers and is managed entirely through the
-`clawker monitor` subcommand.
+and firewall (Envoy + CoreDNS) logs. It runs on its own Docker Compose
+network, never on the `clawker-net` agent network, and is managed
+entirely through the `clawker monitor` subcommand. Every published port
+binds `127.0.0.1`; agent containers cannot resolve or reach any
+monitoring service.
 
 ## What it is
 
@@ -184,7 +186,7 @@ stack is throwaway and `monitor down --volumes` wipes them.
 
 The monitoring stack is host-side infrastructure. From inside an
 agent, use `docker exec` against the stack containers (or check
-their `clawker-net` IPs via `docker inspect`) — do NOT try to run
+their IPs via `docker inspect`; they are not on `clawker-net`) — do NOT try to run
 host-side `clawker monitor up/down/status` from within an agent
 container.
 
