@@ -75,13 +75,27 @@ configuration. Do not invent field names from training data.
 ## What agent containers send
 
 Every clawker-built image has OTel env vars baked at build time
-(`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, etc.)
-pointing at the collector's `clawker-net` hostname. When the stack
-is down, agents emit to a no-op endpoint silently — there is no error
-or retry storm. When the stack comes up, telemetry flows automatically
-on the next container start. Already-running agents do NOT
-retroactively connect — Claude Code resolves the OTLP endpoint at
-process start, not per-export.
+(`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, the three
+`OTEL_*_EXPORTER=otlp` settings, `CLAUDE_CODE_ENABLE_TELEMETRY=1`,
+etc.). `OTEL_EXPORTER_OTLP_ENDPOINT` is always
+`http://127.0.0.1:4318` — the loopback OTLP/HTTP relay that the
+container's clawkerd daemon serves. Agent telemetry never leaves the
+container directly: clawkerd carries each batch to the control plane
+over its mTLS identity, the control plane stamps the verified
+`project`/`agent`/`container_id` and forwards to the collector. Do
+not diagnose by probing the collector from inside an agent; check
+clawkerd's log (`/var/log/clawker/clawkerd.log`) for
+`otlp_relay_ready`, `otlp_relay_unavailable`, or
+`otlp_relay_cp_unavailable` instead.
+
+At container creation, Clawker checks whether the `otel-collector`
+container is running. If it is not, it overrides
+`OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER`, and
+`OTEL_TRACES_EXPORTER` to `none` for that container's lifetime, so
+there is no error or retry storm. When the stack comes up, telemetry
+flows on the next container start. Already-running agents do NOT
+retroactively enable — the SDK reads the exporter settings at process
+start, not per-export.
 
 This means: **start the monitoring stack before starting agent
 containers** if you want to capture their telemetry. Containers that
@@ -114,22 +128,28 @@ predate `monitor up` will produce no data until they restart.
    clawker monitor up
    ```
 
-3. **Agents started before the stack came up?** They have no live OTel
-   connection. Restart the agents so they pick up the running endpoint:
+3. **Agents started before the stack came up?** Their exporters were
+   set to `none` at creation. Restart the agents so they are recreated
+   with exporters enabled:
    ```
    clawker container restart --agent <agent-name>
    ```
 
 ### `claude-code` index has no documents
 
-Claude Code emits telemetry only when `CLAUDE_CODE_ENABLE_TELEMETRY=1`.
-Clawker sets this automatically — `1` when the monitoring stack is
-detected at container creation time, `0` otherwise. If the agent
-container was started before the monitoring stack came up, it has
-`CLAUDE_CODE_ENABLE_TELEMETRY=0` baked in for its lifetime. Restart the
-agent after `clawker monitor up` to pick up `=1`. Fetch
-`https://docs.clawker.dev/monitoring` for the current variable list
-and recommended values.
+`CLAUDE_CODE_ENABLE_TELEMETRY=1` is baked into the image and is never
+toggled. The switch is the exporter set: if the agent container was
+created before the monitoring stack came up, it has
+`OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER`, and
+`OTEL_TRACES_EXPORTER` set to `none` for its lifetime. Restart the
+agent after `clawker monitor up` so it is recreated with the exporters
+set to `otlp`. Confirm with `docker inspect <agent> --format
+'{{.Config.Env}}'` (Claude Code strips OTEL vars from its shell env,
+so `env` inside the agent is misleading). If the exporters are `otlp`
+and the index is still empty, check clawkerd's log for `otlp_relay_*`
+events — the relay degrades silently when it cannot reach the control
+plane. Fetch `https://docs.clawker.dev/monitoring` for the current
+variable list and recommended values.
 
 ### `clawker-envoy` / `clawker-coredns` indices empty
 
