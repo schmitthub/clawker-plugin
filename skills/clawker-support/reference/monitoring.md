@@ -10,8 +10,11 @@ Docker network as agent containers and is managed entirely through the
 
 Four containers brought up by `clawker monitor up`:
 
-- **OTel Collector** — receives OTLP/HTTP from agents on `:4318`, fans
-  out to OpenSearch (logs) and Prometheus exporter (metrics).
+- **OTel Collector** — receives agent telemetry from the control plane
+  (agents export to a loopback relay in their container; the control
+  plane stamps the verified `project`/`agent`/`container_id` and forwards
+  on its own mTLS receiver), fans out to OpenSearch (logs) and Prometheus
+  exporter (metrics).
 - **OpenSearch** — log storage. Core infra indices (`clawker-cli`,
   `clawkercp`, `clawker-envoy`, `clawker-coredns`, `clawker-ebpf-egress`)
   are always present; the `claude-code` index and its dashboards are
