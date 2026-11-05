@@ -21,7 +21,7 @@ reference files. Check these first if the issue matches:
 | Control plane down or unreachable | This file | Control plane down or unhealthy |
 | `Token used before issued` / token fetch timeout on container start | This file | Control plane down or unhealthy |
 | Agent missing from CP registry | This file | Agent appears in clawker ps but missing from CP |
-| Host actions or telemetry fail after upgrade to 2026.10.4 | `reference/known-issues.md` | Containers created before 2026.10.4 |
+| Host actions or telemetry fail after upgrade to 2026.11.1 | `reference/known-issues.md` | Containers created before 2026.11.1 |
 | `sudo` not found, or `sudo` fails in `user_run`/`post_init`/`pre_run` | `reference/project-config.md` | Troubleshooting › Build failed |
 
 ## Global issues

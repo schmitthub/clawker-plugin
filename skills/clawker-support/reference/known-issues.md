@@ -140,11 +140,11 @@ Support for a local daemon over TCP is a planned follow-up
 A daemon on a different machine is out of scope by design: the eBPF firewall
 attaches to cgroups on the local kernel.
 
-## Containers created before 2026.10.4
+## Containers created before 2026.11.1
 
-From 2026.10.4, host actions (browser open, git HTTPS credentials, OAuth
+From 2026.11.1, host actions (browser open, git HTTPS credentials, OAuth
 callbacks) go through the control plane, and agent telemetry goes through a
-relay in the container. Containers created before 2026.10.4 cannot use host
+relay in the container. Containers created before 2026.11.1 cannot use host
 actions or the telemetry relay. Symptoms: the browser does not open, git HTTPS
 credentials fail, or the monitoring stack gets no agent telemetry.
 
