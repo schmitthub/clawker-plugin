@@ -20,9 +20,10 @@ Four containers brought up by `clawker monitor up`:
 - **OpenSearch** — log storage. Core infra indices (`clawker-cli`,
   `clawkercp`, `clawker-envoy`, `clawker-coredns`, `clawker-ebpf-egress`)
   are always present; the `claude-code` index and its dashboards are
-  contributed by the built-in `claude-code` monitoring extension, which a
-  project opts into via `monitor.extensions` (no default selection). Other
-  extensions add their own indices.
+  contributed by the built-in `claude-code` monitoring extension, which
+  `monitor.extensions` selects. The default selection is `claude-code`;
+  `extensions: []` opts out of all extensions. Other extensions add their
+  own indices.
 - **OpenSearch Dashboards (OSD)** — UI at `http://localhost:5601`.
 - **Prometheus** — metrics scrape + UI at `http://localhost:9090`.
 
@@ -130,11 +131,12 @@ predate `monitor up` will produce no data until they restart.
    clawker monitor up
    ```
 
-3. **Agents started before the stack came up?** Their exporters were
-   set to `none` at creation. Restart the agents so they are recreated
-   with exporters enabled:
+3. **Agents created before the stack came up?** Their exporters were
+   set to `none` at creation. A restart keeps that setting. Recreate the
+   agents so that the exporters are enabled:
    ```
-   clawker container restart --agent <agent-name>
+   clawker rm <container-name>
+   clawker run ...   # same project and agent name
    ```
 
 ### `claude-code` index has no documents
@@ -143,9 +145,9 @@ predate `monitor up` will produce no data until they restart.
 toggled. The switch is the exporter set: if the agent container was
 created before the monitoring stack came up, it has
 `OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER`, and
-`OTEL_TRACES_EXPORTER` set to `none` for its lifetime. Restart the
-agent after `clawker monitor up` so it is recreated with the exporters
-set to `otlp`. Confirm with `docker inspect <agent> --format
+`OTEL_TRACES_EXPORTER` set to `none` for its lifetime. A restart keeps
+that setting. After `clawker monitor up`, recreate the agent (`clawker rm`,
+then `clawker run`) so that the exporters are set to `otlp`. Confirm with `docker inspect <agent> --format
 '{{.Config.Env}}'` (Claude Code strips OTEL vars from its shell env,
 so `env` inside the agent is misleading). If the exporters are `otlp`
 and the index is still empty, check clawkerd's log for `otlp_relay_*`
@@ -184,11 +186,11 @@ stack is throwaway and `monitor down --volumes` wipes them.
 
 ### Cannot run `clawker monitor` commands from inside an agent container
 
-The monitoring stack is host-side infrastructure. From inside an
-agent, use `docker exec` against the stack containers (or check
-their IPs via `docker inspect`; they are not on `clawker-net`) — do NOT try to run
-host-side `clawker monitor up/down/status` from within an agent
-container.
+The monitoring stack is host-only infrastructure. Agent containers cannot
+reach or resolve the monitoring services: the stack is not on
+`clawker-net`, and it publishes only on host loopback. Run
+`clawker monitor status` (and the other `clawker monitor` commands) on the
+host. Do not try to reach the stack from an agent container.
 
 ## Anti-patterns
 

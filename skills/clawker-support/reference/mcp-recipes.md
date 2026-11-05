@@ -145,10 +145,12 @@ Research the specific domains the MCP needs from its documentation.
 
 ## Common Mistake: Putting installations in post_init
 
-`post_init` runs once per config volume, NOT once per image. A marker file on
-the config volume prevents re-execution — so `post_init` will NOT re-run when
-creating a new container if the same config volume is reused. It only re-runs
-when the config volume is new or the marker is deleted. This means package
+`post_init` runs once per agent, NOT once per image. The marker file
+`~/.clawker/post-initialized` is on the agent's lifecycle volume
+(`clawker.<project>.<agent>-<harness>.clawker`) and prevents re-execution — so
+`post_init` will NOT re-run when you create a new container with the same
+project and agent name. It only re-runs when the lifecycle volume is new or the
+marker is deleted. Removing only the config volume does not re-run it. This means package
 installs in `post_init` waste time on every fresh volume and require network
 access at startup.
 
@@ -169,11 +171,12 @@ only for the per-start re-sync case.
 
 ## Troubleshooting
 
-1. **"MCP not found"** — Did post_init run? Check for the marker file inside
-   the container. If the marker exists, post_init already ran on this config
-   volume and won't re-run. To force re-execution (e.g., after changing
-   `post_init`), either delete the marker file or remove the config volume
-   so a fresh one is created. If the dependency itself is missing, it needs
+1. **"MCP not found"** — Did post_init run? Check for
+   `~/.clawker/post-initialized` inside the container. If the marker exists,
+   post_init already ran for this agent and won't re-run. To force
+   re-execution (e.g., after changing `post_init`), delete the marker or
+   remove the lifecycle volume (`clawker.<project>.<agent>-<harness>.clawker`).
+   Removing only the config volume does not re-run post_init. If the dependency itself is missing, it needs
    to be added at build-time and the image rebuilt.
 
 2. **"Connection refused" or timeout** — The MCP's endpoint is probably blocked

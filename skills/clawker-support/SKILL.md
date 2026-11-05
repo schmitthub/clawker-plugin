@@ -66,8 +66,8 @@ in brief:
   deprecated — target `harnesses.claude` instead.
 - **Authentication happens in the container.** Host credentials are never
   copied in; the user authenticates once inside the container (browser OAuth
-  flows are proxied to the host browser) and the token persists in the
-  harness config volume.
+  flows are proxied to the host browser through the control plane and the
+  host proxy) and the token persists in the harness config volume.
 
 Fetch `https://docs.clawker.dev/configuration` and the CLI reference for
 current field names and flags before giving harness-related guidance.
@@ -194,6 +194,20 @@ inside its running container — `curl`, `git clone`, `npm install`,
 `pip install`, MCP servers calling external APIs, `apt-get update` run
 at runtime (not build) — passes through the firewall.
 
+**What the firewall never allows inside a container:**
+
+- Only TCP and UDP sockets. ICMP is denied, so `ping` always fails. Never
+  use `ping` as a connectivity test. SCTP, UDP-Lite, and MPTCP are also
+  denied.
+- No access to other agent containers or to the control plane's internal
+  ports.
+- No direct access to Docker's embedded DNS resolver port.
+- Host services only through a rule, for example
+  `clawker firewall add host.docker.internal --proto tcp --port <port>`.
+
+**Boundary:** the firewall enforces the agent user. Root sockets in the
+container are filtered too.
+
 **Heuristic:** "Where does the network syscall originate?" Host shell →
 not filtered. Inside an agent container → filtered. If unsure, ask the
 user where they ran the command.
@@ -293,7 +307,10 @@ clawker firewall list
 If the user reports hangs, timeouts, or `connection refused` on `clawker
 firewall *` or container commands, the control plane (CP) may be down.
 CP is the host-side daemon that owns the firewall, eBPF lifetime, agent
-registry, and mTLS command channel to every per-container `clawkerd`:
+registry, and mTLS command channel to every per-container `clawkerd`. It also
+authorizes host actions (browser open, git HTTPS credentials, OAuth
+callbacks) and relays agent telemetry. While the CP is down, running agents
+have no egress and no host actions:
 ```bash
 clawker controlplane status     # CP /healthz + firewall subsystem state
 clawker controlplane agents     # agents registered with CP (mTLS thumbprints)
@@ -422,7 +439,9 @@ integrates with.
     why a container asked them to log in, read `reference/claude-code.md`
     (Authentication section). The model: host credentials are never copied
     into containers; the user authenticates once inside the container (browser
-    OAuth flows are proxied to the host browser automatically) and the
+    OAuth flows are proxied to the host browser automatically, through the CP
+    and the host proxy — see `reference/claude-code.md` for the checks and
+    limits) and the
     credential persists in the harness config volume — so restarts and
     recreates that reuse the volume stay logged in, while removing the volume
     forces a fresh login.
@@ -510,7 +529,9 @@ startup sync from the current project's config. It is add/update only: a rule
 deletions — or, to clean up the store wholesale, `clawker firewall prune`:
 it removes every rule, then re-syncs only what the project config and harness
 define (`--all` removes everything and re-syncs nothing; prompts for
-confirmation unless `--yes`). (This is the YAML-config counterpart to the runtime-only `clawker
+confirmation unless `--yes`). The rules store is global to the host, so
+`prune` also removes the rules of other projects; those projects get them back
+with `clawker firewall refresh` or at their next container start. (This is the YAML-config counterpart to the runtime-only `clawker
 firewall add` above — refresh closes the gap between an edited `.clawker.yaml`
 and the live rules store.)
 
@@ -578,7 +599,7 @@ These are the things users consistently get wrong. Keep them in mind always:
   in the firewall allowlist.
 
 - **Runtime config is ONLY for runtime dependencies.** It runs once per
-  config volume (guarded by a marker file). Its only legitimate use is
+  agent (guarded by a marker file on the lifecycle volume). Its only legitimate use is
   commands that require the harness CLI or the initialized config.
   Everything else belongs at build-time. This is the #1 configuration mistake.
 
@@ -600,10 +621,25 @@ These are the things users consistently get wrong. Keep them in mind always:
   Claude Code config directory. The host and container are isolated environments
   with independent MCP configurations. See `reference/mcp-recipes.md`.
 
-- **`post_init` runs once per config volume.** A marker file on the config
-  volume prevents re-execution. Changing `post_init` has no effect until the
-  marker is deleted or the config volume is removed and recreated. This is the
-  most common reason `post_init` changes don't take effect.
+- **`post_init` runs once per agent.** The marker file
+  `~/.clawker/post-initialized` is on the lifecycle volume
+  `clawker.<project>.<agent>-<harness>.clawker` and prevents re-execution.
+  Changing `post_init` has no effect until the marker is deleted or the
+  lifecycle volume is removed. Removing only the config volume does not re-run
+  `post_init`. This is the most common reason `post_init` changes don't take
+  effect.
+
+- **No `sudo` in agent containers.** Agent images do not include `sudo`, and
+  containers run with `no-new-privileges` by default. A config that calls
+  `sudo` in `user_run`, `post_init`, or `pre_run` fails. Move root work to
+  `build.packages` or `root_run`. If `sudo` is truly needed, add it through
+  `build.packages` and pass `--security-opt no-new-privileges=false`; this
+  weakens the sandbox. See `reference/project-config.md` (Build failed).
+
+- **Process limit.** Agent containers have a default limit of 4096 processes.
+  This explains `fork failed` errors. `--pids-limit` changes it; `-1` removes
+  it. Agents also do not join Docker's default bridge network, only
+  `clawker-net`.
 
 - **`pre_run` runs on every start — the once-vs-every counterpart.** `agent.pre_run`
   runs on **every** container start (`run`/`start`/`restart`), in the workdir,

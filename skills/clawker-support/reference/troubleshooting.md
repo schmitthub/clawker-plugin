@@ -21,6 +21,8 @@ reference files. Check these first if the issue matches:
 | Control plane down or unreachable | This file | Control plane down or unhealthy |
 | `Token used before issued` / token fetch timeout on container start | This file | Control plane down or unhealthy |
 | Agent missing from CP registry | This file | Agent appears in clawker ps but missing from CP |
+| Host actions or telemetry fail after upgrade to 2026.10.4 | `reference/known-issues.md` | Containers created before 2026.10.4 |
+| `sudo` not found, or `sudo` fails in `user_run`/`post_init`/`pre_run` | `reference/project-config.md` | Troubleshooting › Build failed |
 
 ## Global issues
 
@@ -60,6 +62,23 @@ User reports `clawker: command not found` or similar.
 
 User reports network errors, timeouts, or "connection refused" from inside
 a container.
+
+**Some traffic is always denied. No rule opens it:**
+
+- An agent container can create only TCP and UDP sockets. ICMP is denied, so
+  `ping` always fails. Never use `ping` as a connectivity test; use `curl` or
+  `git ls-remote`. SCTP, UDP-Lite and MPTCP sockets are also denied.
+- Agents cannot reach other agent containers or the control plane's internal
+  ports.
+- The direct port of Docker's embedded DNS resolver is denied. All DNS goes
+  through the firewall's DNS server.
+- Agents join only `clawker-net`, not Docker's default bridge network.
+- Host services are reachable only through a rule, for example
+  `clawker firewall add host.docker.internal --proto tcp --port <port>`.
+  Without a rule, `host.docker.internal` does not resolve.
+
+The firewall enforces the agent user. Root sockets in the container are
+filtered too.
 
 1. **Is the firewall enabled?**
    ```bash
@@ -186,13 +205,24 @@ failed lane fails when it is used.
 1. **Is HTTPS forwarding enabled in config?** Fetch the current config schema
    and check the credential forwarding fields.
 
-2. **Is the host proxy running?** Git HTTPS goes through clawker's host proxy.
+2. **Is the host proxy running?** Git HTTPS credentials come from the host
+   through the control plane (CP) and clawker's host proxy. `clawker firewall
+   status` does not show the host proxy. Check each part:
    ```bash
-   clawker firewall status
+   clawker host-proxy status          # or: cat ~/.local/state/clawker/pids/hostproxy.pid
+   clawker controlplane status
    ```
+   Then check `security.enable_host_proxy` and
+   `security.git_credentials.forward_https` in the project config. The CP
+   checks these settings for each container. They apply at container create,
+   so recreate the container after you change them.
 
 3. **Is the git host in the firewall?** The domain needs to be in the firewall
    allowlist. Fetch the config schema for the correct syntax to add it.
+
+The host proxy answers git credential `store` and `erase` requests itself.
+They never change the host credential store, so a `401` in the container
+cannot erase the host token.
 
 ---
 
@@ -210,8 +240,9 @@ User reports the container fails to start or immediately exits.
    clawker image list
    ```
 
-3. **Port conflicts**: If the firewall or host proxy can't bind ports,
-   check for conflicts.
+3. **Port conflicts**: If the firewall or control plane cannot bind its
+   ports, check for conflicts. The host proxy opens no port and has no port
+   setting.
 
 4. **Docker Desktop running?**
    ```bash
@@ -234,6 +265,10 @@ User reports the container fails to start or immediately exits.
    clawker controlplane status
    clawker controlplane up         # idempotent — brings CP up if needed
    ```
+
+7. **`fork failed` or `Resource temporarily unavailable`**: agent containers
+   have a default process limit of 4096. Set a different limit with
+   `--pids-limit`; `-1` removes the limit.
 
 ---
 
@@ -362,7 +397,9 @@ that means nothing is listening at all.
    restart Docker Desktop to force the resync, then retry the `clawker`
    command.
 
-6. **Recovery — full restart**:
+6. **Recovery — full restart**: while the CP is down, running agents have no
+   egress and no host actions (browser open, git HTTPS credentials, OAuth
+   callbacks). The firewall stays closed. Tell the user before you stop the CP.
    ```bash
    clawker controlplane down
    clawker controlplane up

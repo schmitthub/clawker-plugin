@@ -161,10 +161,18 @@ triggers a build).
    See the "Firewall Scope" critical rule in `SKILL.md` for the host vs
    container split.
 
-5. **COPY file not found**: Copy instruction paths are relative to the build
+5. **`sudo` not found or `sudo` fails**: agent images do not include `sudo`,
+   and agent containers run with `no-new-privileges` by default. A config
+   that calls `sudo` in `user_run`, `post_init`, or `pre_run` fails. Move the
+   root work to `build.packages` or `root_run`. If the agent truly needs
+   `sudo`, add it through `build.packages` and start the container with
+   `--security-opt no-new-privileges=false`. Tell the user that this weakens
+   the container sandbox.
+
+6. **COPY file not found**: Copy instruction paths are relative to the build
    context (project root). Verify the source file exists at the specified path.
 
-6. **Rebuild from scratch**:
+7. **Rebuild from scratch**:
    ```bash
    clawker build --no-cache
    ```
@@ -207,7 +215,10 @@ User changed their clawker config but the change doesn't seem to apply.
    refresh` — it re-runs the container-start sync into the rules store without
    a restart (add/update only; a rule *deleted* from the config is not pruned —
    use `clawker firewall remove`, or `clawker firewall prune` to reset the
-   store to the config-defined set). Fetch the current schema to check
+   store to the config-defined set). The rules store is global to the host,
+   so `prune` also removes the rules of other projects. Those projects get
+   their rules back with `clawker firewall refresh` or at their next
+   container start. Fetch the current schema to check
    which fields are build-time vs runtime.
 
 4. **Local override hiding changes**: Check if a local override file exists

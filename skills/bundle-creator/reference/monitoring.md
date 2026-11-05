@@ -56,6 +56,9 @@ reference for the full directory shape.
   `to: kind`) or the Dashboards Metrics UI can't read the series.
 - **Routing is exact-match on `service.name`.** Typos fail silently — the
   records just land nowhere. Verify against the live emitter, not memory.
+  `service.name` is the only routing key the emitter controls. The identity
+  attributes (`project`, `agent`, `container_id`, `clawker.*`) always carry
+  the control plane's verified values, whatever the emitter sets.
 - **Consumption model:** projects select the extension in
   `monitor.extensions` (whole-value override across config layers, not a
   union). `clawker monitor up` seeds it at bring-up; on an already-running

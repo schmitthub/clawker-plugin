@@ -87,5 +87,9 @@ codex, and opencode, the last being the standalone-installer case).
 - **Installer contracts:** verify by reading the live install script. Vendor
   installers change flags and layouts; docs summaries (including AI ones)
   are frequently stale.
+- **Telemetry goes to the in-container relay.** A harness that emits OTel
+  must export to `http://127.0.0.1:4318`, the clawkerd relay. The control plane overwrites the
+  `project`, `agent`, `container_id`, and `clawker.*` attributes with its
+  verified values, so do not set them in the harness.
 - Version pinning: the resolver hands the fragment a concrete version — wire
   it through to the installer (env var or flag) so builds reproduce.
