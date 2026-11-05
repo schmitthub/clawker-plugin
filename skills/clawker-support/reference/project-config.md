@@ -164,10 +164,8 @@ triggers a build).
 5. **`sudo` not found or `sudo` fails**: agent images do not include `sudo`,
    and agent containers run with `no-new-privileges` by default. A config
    that calls `sudo` in `user_run`, `post_init`, or `pre_run` fails. Move the
-   root work to `build.packages` or `root_run`. If the agent truly needs
-   `sudo`, add it through `build.packages` and start the container with
-   `--security-opt no-new-privileges=false`. Tell the user that this weakens
-   the container sandbox.
+   root work to `build.packages` or `root_run`, which run at build time as
+   root.
 
 6. **COPY file not found**: Copy instruction paths are relative to the build
    context (project root). Verify the source file exists at the specified path.

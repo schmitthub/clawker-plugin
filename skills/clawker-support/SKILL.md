@@ -632,13 +632,12 @@ These are the things users consistently get wrong. Keep them in mind always:
 - **No `sudo` in agent containers.** Agent images do not include `sudo`, and
   containers run with `no-new-privileges` by default. A config that calls
   `sudo` in `user_run`, `post_init`, or `pre_run` fails. Move root work to
-  `build.packages` or `root_run`. If `sudo` is truly needed, add it through
-  `build.packages` and pass `--security-opt no-new-privileges=false`; this
-  weakens the sandbox. See `reference/project-config.md` (Build failed).
+  `build.packages` or `root_run`, which run at build time as root. See
+  `reference/project-config.md` (Build failed).
 
 - **Process limit.** Agent containers have a default limit of 4096 processes.
-  This explains `fork failed` errors. `--pids-limit` changes it; `-1` removes
-  it. Agents also do not join Docker's default bridge network, only
+  This explains `fork failed` errors. To change it, see
+  `https://docs.clawker.dev/cli-reference/clawker_container_run`. Agents also do not join Docker's default bridge network, only
   `clawker-net`.
 
 - **`pre_run` runs on every start — the once-vs-every counterpart.** `agent.pre_run`

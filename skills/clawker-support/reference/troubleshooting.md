@@ -267,8 +267,8 @@ User reports the container fails to start or immediately exits.
    ```
 
 7. **`fork failed` or `Resource temporarily unavailable`**: agent containers
-   have a default process limit of 4096. Set a different limit with
-   `--pids-limit`; `-1` removes the limit.
+   have a default process limit of 4096. To change it, see
+   `https://docs.clawker.dev/cli-reference/clawker_container_run`.
 
 ---
 

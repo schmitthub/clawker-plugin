@@ -95,14 +95,14 @@ At container creation, Clawker checks whether the `otel-collector`
 container is running. If it is not, it overrides
 `OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER`, and
 `OTEL_TRACES_EXPORTER` to `none` for that container's lifetime, so
-there is no error or retry storm. When the stack comes up, telemetry
-flows on the next container start. Already-running agents do NOT
-retroactively enable — the SDK reads the exporter settings at process
-start, not per-export.
+there is no error or retry storm. The override stays for the life of
+the container: a restart keeps `none`. When the stack comes up,
+telemetry flows only from containers created after that.
 
 This means: **start the monitoring stack before starting agent
 containers** if you want to capture their telemetry. Containers that
-predate `monitor up` will produce no data until they restart.
+predate `monitor up` produce no data until you recreate them
+(`clawker rm`, then `clawker run`).
 
 ## Troubleshooting
 
