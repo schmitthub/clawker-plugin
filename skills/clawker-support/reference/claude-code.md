@@ -32,9 +32,14 @@ config volume, and the container keeps itself logged in indefinitely.
 
 1. **First run against a fresh config volume**: Claude Code has no credential
    and prompts `/login`. The OAuth browser flow is proxied to the **host
-   browser** automatically (clawker's host proxy handles the callback), so the
-   user completes login in their normal browser even though Claude Code runs
-   in the container. Anthropic's login domains are part of the claude
+   browser** automatically, so the user completes login in their normal
+   browser even though Claude Code runs in the container. The request goes
+   through the control plane (CP), which checks the project's
+   `security.enable_host_proxy` setting, and then to clawker's host proxy.
+   The host opens the URL only if it passes the firewall rules. The callback
+   must go to `localhost` or `127.0.0.1` on port 1024 or higher. The callback
+   listener stays open for at most 5 minutes and closes after the first
+   callback. Anthropic's login domains are part of the claude
    harness's default egress floor, so the flow works with the firewall on.
 2. **Claude Code stores the credential in the config volume.** On Linux,
    Claude Code uses an OS Secret Service when one is present and falls back to
@@ -60,8 +65,13 @@ A `/login` prompt inside a container is expected exactly when the config
 volume has no valid credential:
 
 - **Brand-new agent (fresh config volume)** — first-run login, one time. The
-  browser flow opens on the host automatically; if it doesn't, the host proxy
-  may be down — restarting the container re-establishes it.
+  browser flow opens on the host automatically. If it does not, check on the
+  host: `clawker controlplane status`, then `clawker host-proxy status` (or
+  `~/.local/state/clawker/pids/hostproxy.pid`), then
+  `security.enable_host_proxy` in the project config. A container start or
+  restart starts the host proxy only if it is not running; it does not
+  restart a running host proxy. As a workaround, copy the printed login URL
+  into the host browser by hand.
 - **Config volume was removed or recreated** (`clawker volume remove`, or a
   recreate under a different agent name) — the credential lived in the old
   volume; log in once in the new one.

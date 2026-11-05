@@ -138,6 +138,12 @@ reset the store to exactly what the YAML and harness define (drops every
 runtime-only `firewall add` in one confirmed step; `--all` empties the store
 entirely).
 
+The rules store is global to the host, not per project. A domain that one
+project adds is reachable from every enrolled container until you remove it.
+`clawker firewall prune` also removes the rules of other projects. Those
+projects get their rules back with `clawker firewall refresh` or at their next
+container start.
+
 ## Method gating — the coarse write backstop
 
 Because HTTPS is MITM-terminated, the firewall sees the request **method**. A

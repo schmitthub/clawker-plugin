@@ -55,7 +55,8 @@ resources and won't touch other Docker workloads:
 
 1. `clawker image prune` — remove unused clawker images
 2. `clawker volume list` + `clawker volume remove <name>` — targeted volume cleanup
-3. `clawker rm <name>` — remove specific stopped containers
+3. `clawker rm <name>` — remove specific stopped containers. It keeps the
+   agent's config, lifecycle, and history volumes unless you add `--volumes`.
 
 `clawker volume prune` (no flags) removes **all** unattached agent volumes —
 config, history, AND workspace. This wipes per-agent settings and shell

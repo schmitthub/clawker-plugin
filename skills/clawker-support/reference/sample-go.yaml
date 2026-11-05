@@ -84,7 +84,6 @@ build:
     - gh
     - locales
     - locales-all
-    - iputils-ping
     - shellcheck
 security:
   docker_socket: false
